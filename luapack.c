@@ -177,6 +177,7 @@ void pack_number_help(lua_State* L, LuaPackBuf* io, LONG_LONG value) {
 
 int pack_arg_help(lua_State* L, LuaPackBuf* io, int index) {
 	stackDeep++;
+	LUA_ERROR(L, stackDeep <= MAX_STACK_DEEP, "stack overflow");
 	int top = lua_gettop(L);
 	int lt = lua_type(L, index);
 	switch (lt) {
