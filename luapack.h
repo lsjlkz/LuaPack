@@ -77,23 +77,5 @@ static luaL_Reg pack_methods[] = {
 	{NULL, NULL}
 };
 
-LUA_API int open_pack_lib(lua_State* L) {
-	luaL_newmetatable(L, "__LUA__PACK__TABLE");
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
-	luaL_setfuncs(L, pack_functions, 0);
-	return 1;
-}
-
-LUAMOD_API int open_pack_obj(lua_State* L) {
-	luaL_requiref(L, "lua.pack", open_pack_lib, 0);
-
-	luaL_newmetatable(L, LUA_PACKAGE_META);
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
-	luaL_setfuncs(L, pack_methods, 0);
-	lua_setglobal(L, LUA_PACKAGE_META);
-	return 1;
-}
 
 
