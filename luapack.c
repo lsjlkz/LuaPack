@@ -2,6 +2,9 @@
 // Created by lsjlkz on 2023/5/17.
 //
 
+#define LUA_LIB
+#include "lprefix.h"
+
 #include "luapack.h"
 #include <stdlib.h>
 
@@ -83,28 +86,28 @@ LUA_API int obj_len(lua_State* L) {
 }
 
 
-void pack_type(LuaPackBuf* io, char value) {
+static void pack_type(LuaPackBuf* io, char value) {
 	PACK_BYTES(io, value);
 }
 
-void pack_long_long(LuaPackBuf* io, LONG_LONG value) {
+static void pack_long_long(LuaPackBuf* io, LONG_LONG value) {
 	PACK_BYTES(io, value);
 }
 
-void pack_long(LuaPackBuf* io, LONG value) {
+static void pack_long(LuaPackBuf* io, LONG value) {
 	PACK_BYTES(io, value);
 }
 
-void pack_short(LuaPackBuf* io, SHORT value) {
+static void pack_short(LuaPackBuf* io, SHORT value) {
 	PACK_BYTES(io, value);
 }
 
 
-void pack_int(LuaPackBuf* io, INT value) {
+static void pack_int(LuaPackBuf* io, INT value) {
 	PACK_BYTES(io, value);
 }
 
-void pack_string(LuaPackBuf* io, const char* s, size_t size) {
+static void pack_string(LuaPackBuf* io, const char* s, size_t size) {
 	// has done size check
 	U_SHORT usize = size;
 
@@ -114,14 +117,14 @@ void pack_string(LuaPackBuf* io, const char* s, size_t size) {
 	io->write_size += size;
 }
 
-TABLE_SIZE_TYPE* pack_size(LuaPackBuf* io, TABLE_SIZE_TYPE size) {
+static TABLE_SIZE_TYPE* pack_size(LuaPackBuf* io, TABLE_SIZE_TYPE size) {
 	TABLE_SIZE_TYPE* p = io->buf + io->write_size;
 	*p = size;
 	io->write_size += sizeof(TABLE_SIZE_TYPE);
 	return p;
 }
 
-void pack_number_help(lua_State* L, LuaPackBuf* io, LONG_LONG value) {
+static void pack_number_help(lua_State* L, LuaPackBuf* io, LONG_LONG value) {
 
 	WRITE_BUF_CHECK_OVERFLOW(L, io, sizeof(LUA_TYPE_FLAG));
 	LUA_TYPE_FLAG t = 0;
@@ -175,7 +178,7 @@ void pack_number_help(lua_State* L, LuaPackBuf* io, LONG_LONG value) {
 }
 
 
-int pack_arg_help(lua_State* L, LuaPackBuf* io, int index) {
+static int pack_arg_help(lua_State* L, LuaPackBuf* io, int index) {
 	stackDeep++;
 	LUA_ERROR(L, stackDeep <= MAX_STACK_DEEP, "stack overflow");
 	int top = lua_gettop(L);
@@ -250,9 +253,7 @@ int pack_arg_help(lua_State* L, LuaPackBuf* io, int index) {
 
 
 
-
-
-int unpack_to_arg_help(lua_State* L, LuaPackBuf* io) {
+static int unpack_to_arg_help(lua_State* L, LuaPackBuf* io) {
 	int top = lua_gettop(L);
 	LUA_TYPE_FLAG t = 0;
 	lua_checkstack(L, top + 5);
@@ -324,3 +325,25 @@ int unpack_to_arg_help(lua_State* L, LuaPackBuf* io) {
 	}
 	return 1;
 }
+
+
+
+LUA_API int open_pack_lib(lua_State* L) {
+	luaL_newmetatable(L, "__LUA__PACK__TABLE");
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	luaL_setfuncs(L, pack_functions, 0);
+	return 1;
+}
+
+LUAMOD_API int open_pack_obj(lua_State* L) {
+	luaL_requiref(L, "lua.pack", open_pack_lib, 0);
+
+	luaL_newmetatable(L, LUA_PACKAGE_META);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+	luaL_setfuncs(L, pack_methods, 0);
+	lua_setglobal(L, LUA_PACKAGE_META);
+	return 1;
+}
+
